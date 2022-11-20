@@ -1,21 +1,17 @@
 import pandas as pd
 
-def read_train_data(filename):
-    df_train = pd.read_csv(filename)
-    x_train = df_train.iloc[:,2:]
-    t_train = df_train.iloc[:,[1]] #species
-    return x_train,t_train
+class readData:
+    def __init__(self,train_filename, test_filename):
+        self.train_filename = train_filename
+        self.test_filename = test_filename
 
-def read_test_data(filename):
-    df_test = pd.read_csv(filename)
-    x_test = df_test.iloc[:,1:]
-    return x_test
+    def extract_train_data(self):
+        df_train = pd.read_csv(self.train_filename)
+        x_train = df_train.iloc[:,2:]
+        t_train = df_train.iloc[:,[1]]
+        return x_train, t_train
 
-x_train,t_train = read_train_data("data/train.csv")
-x_test = read_test_data("data/test.csv")
-
-print(x_train)
-print("")
-print(t_train)
-print("")
-print(x_test)
+    def extract_test_data(self):
+        df_test = pd.read_csv(self.test_filename)
+        x_test = df_test.iloc[:,1:]
+        return x_test
