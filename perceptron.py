@@ -4,7 +4,6 @@ Dans cette classe, on implémente la méthode du perceptron, K classes et d dime
 
 from sklearn.linear_model import SGDClassifier
 import numpy as np
-import matplotlib.pyplot as plt
 
 class perceptron:
 
@@ -47,10 +46,3 @@ class perceptron:
             return 0
         else:
             return 1
-
-    def afficher_donnees(self,x_train):
-        plt.figure(0)
-        plt.scatter(x_train[:,0],x_train[:,1])
-        plt.show()
-
-

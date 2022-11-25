@@ -1,6 +1,6 @@
 import pandas as pd
 
-class readData:
+class lireDonnees:
     def __init__(self,train_filename, test_filename, reference_filename):
         self.train_filename = train_filename
         self.test_filename = test_filename

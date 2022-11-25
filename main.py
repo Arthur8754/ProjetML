@@ -1,5 +1,6 @@
-import readData
+import lireDonnees
 import perceptron
+import visualiserDonnees
 import numpy as np
 
 def evaluate_perceptron(x_train,t_train,x_test,lamb,reference):
@@ -17,25 +18,24 @@ def evaluate_perceptron(x_train,t_train,x_test,lamb,reference):
 
     # Erreur d'entraînement :
     erreur_train_array = np.array([perc.erreur(t,pred) for t,pred in zip(t_train,pred_train)])
-    erreur_train = 100*np.count_nonzero(erreur_train_array)/len(erreur_train_array)
+    erreur_train = round(100*np.count_nonzero(erreur_train_array)/len(erreur_train_array),1)
     print(f"Erreur d'entraînement : {erreur_train} %")
     print("------------------------------")
-    perc.afficher_donnees(x_train)
+
+    # Prédiction (données de test) :
+    pred_test = np.array([perc.prediction(x,reference) for x in x_test])
+    #print(pred_test)
 
 def main():
     # Extraction des données d'entraînement et de test
-    rd = readData.readData("data/train.csv","data/test.csv","data/sample_submission.csv")
+    rd = lireDonnees.lireDonnees("data/train.csv","data/test.csv","data/sample_submission.csv")
     x_train,t_train = rd.extract_train_data()
     x_test = rd.extract_test_data()
-    reference = rd.create_reference()
-    #print("x_train : ")
-    #print(x_train)
-    #print("t_train : ")
-    #print(t_train)
-    #print("x_test : ")
-    #print(x_test)
-    #print("Références :")
-    #print(reference)
+    reference = rd.create_reference() #liste des différentes espèces possibles
+
+    # Visualisation des données d'entraînement
+    vd = visualiserDonnees.visualiserDonnees(x_train,x_test,t_train,reference)
+    vd.visualiserEntrainement()
 
     # Modèle du perceptron :
     evaluate_perceptron(x_train,t_train,x_test,0.01,reference)
