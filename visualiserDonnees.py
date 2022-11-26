@@ -42,7 +42,7 @@ class visualiserDonnees:
         plt.scatter(x_train_2d[:,0],x_train_2d[:,1],c=tab_colors)
         plt.xlabel("1ère composante principale")
         plt.ylabel("2ème composante principale")
-        plt.title("Données d'entraînement (vus en 2D à l'aide d'une ACP)")
+        plt.title("Données d'entraînement (vues en 2D à l'aide d'une ACP)")
         plt.show()
 
     def visualiserTest(self):
@@ -58,5 +58,5 @@ class visualiserDonnees:
         plt.scatter(x_test_2d[:,0],x_test_2d[:,1],c="black")
         plt.xlabel("1ère composante principale")
         plt.ylabel("2ème composante principale")
-        plt.title("Données de test (vus en 2D à l'aide d'une ACP)")
+        plt.title("Données de test (vues en 2D à l'aide d'une ACP)")
         plt.show()

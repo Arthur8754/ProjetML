@@ -3,15 +3,18 @@ import perceptron
 import visualiserDonnees
 import numpy as np
 
-def evaluate_perceptron(x_train,t_train,x_test,lamb,reference):
+def evaluate_perceptron(x_train,t_train,x_test,lamb,reference, recherche_hyper_parametres):
     print("------------------------------")
     print("Perceptron :")
-    print("Pas de recherche d'hyper-paramètres")
+    if recherche_hyper_parametres:
+        print("Avec recherche d'hyper-paramètres (lambda)")
+    else:
+        print("Pas de recherche d'hyper-paramètres")
     
     perc = perceptron.perceptron(lamb=lamb)
 
     # Entraînement du perceptron :
-    perc.entrainement(x_train,t_train)
+    perc.entrainement(x_train,t_train, recherche_hyper_parametres, reference)
 
     # Prédiction (données d'entraînement):
     pred_train = np.array([perc.prediction(x,reference) for x in x_train])
@@ -36,9 +39,10 @@ def main():
     # Visualisation des données d'entraînement
     vd = visualiserDonnees.visualiserDonnees(x_train,x_test,t_train,reference)
     vd.visualiserEntrainement()
+    vd.visualiserTest()
 
     # Modèle du perceptron :
-    evaluate_perceptron(x_train,t_train,x_test,0.01,reference)
+    evaluate_perceptron(x_train,t_train,x_test,0.01,reference, True)
 
 if __name__=="__main__":
     main()

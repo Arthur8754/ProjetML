@@ -15,15 +15,19 @@ class perceptron:
         self.W_0 = None #biais
         self.lamb = lamb #terme de régularisation (hyper-paramètre)
 
-    def entrainement(self, x_train, t_train):
+    def entrainement(self, x_train, t_train, recherche_hyper_parametres, reference):
         """
         Paramètres à inclure dans la fonction SGDCClassifier.
         Dans le cas d'un MAP, E(W) = fonction_perte + lamb*R(W).
         --> Fonction_perte = celle du perceptron => loss="perceptron"
         --> R(W) : terme de régularisation : on prend la norme 2 ici => penalty = l2
         --> lamb : constante devant le terme de régularisation => alpha = lamb
-        --> eta0 : le learning rate dans la descente de gradient        
+        --> eta0 : le learning rate dans la descente de gradient  
+
+        cross_validation = True si on veut une recherche d'hyper-paramètres, False sinon.      
         """
+        if recherche_hyper_parametres:
+            self.recherche_hyper_parametres(x_train, t_train, reference)
         modele = SGDClassifier(loss="perceptron",penalty="l2",alpha=self.lamb,learning_rate="constant",eta0=0.001,max_iter=1000)
         modele.fit(x_train,t_train)
         self.W = modele.coef_ 
@@ -46,3 +50,101 @@ class perceptron:
             return 0
         else:
             return 1
+
+    def recherche_hyper_parametres(self,x_tab,t_tab,reference):
+        """
+        Recherche le meilleur hyperparamètre lamb à l'aide de la K-fold cross validation.
+        RAPPEL : k-fold cross validation :
+        1. Mélanger les données d'entraînement
+        2. Découper les données d'entraînement en k groupes distincts
+        3. Pour chaque valeur possible de l'hyper-paramètre :
+            a. Faire k fois :
+                i. Prendre 1 groupe sur les k pour la validation (à chaque fois différent d'une itération à l'autre), le reste pour l'apprentissage
+                ii. Entraîner le modèle sur D_apprentissage
+                iii. Prédire sur D_valid, et déterminer l'erreur de validation associée
+            b. Déterminer l'erreur moyenne de validation sur toutes les itérations.
+        4. Retenir la valeur de l'hyper-paramètre pour laquelle l'erreur moyenne de validation est minimale
+        """
+        # Mélange des données d'entraînement :
+        shuffler = np.random.permutation(len(x_tab)) #permute les index aléatoirement
+        x_tab_shuffled = x_tab[shuffler] #on associe x_tab aux nouveaux index
+        t_tab_shuffled = t_tab[shuffler] #on associe t_tab aux nouveaux index
+
+        # Découpage des données d'entraînement en k=10 groupes distincts
+        k=10
+        x_split = np.split(x_tab_shuffled,k)
+        t_split = np.split(t_tab_shuffled,k)
+
+        # Extraction des données d'entraînement et de validation :
+        X_trains = [] #tableau à k=10 éléments : stocke les X_train pour les 10 itérations de la k fold cross validation
+        t_trains = []
+        X_valids = []
+        t_valids = []
+
+        for j in range(k):
+            # Recherche de l'ensemble de validation (un groupe sur les k groupes (à chaque fois différent))
+            X_valid = x_split[j]
+            t_valid = t_split[j]
+            
+            # Recherche de l'ensemble d'apprentissage (tout sauf le groupe de validation)
+            x_split1 = x_split[:j]
+            x_split2 = x_split[j+1:]
+            t_split1 = t_split[:j]
+            t_split2 = t_split[j+1:]
+
+            if len(x_split1) != 0 and len(x_split2)!=0:
+                X_train = np.array(np.concatenate((x_split1,x_split2)))
+                X_train = X_train.reshape((-1,len(x_tab[0])))
+                t_train = np.array(np.concatenate((t_split1,t_split2)))
+                t_train = t_train.reshape((1,-1))[0]
+            elif len(x_split1) != 0 and len(x_split2) == 0:
+                X_train = np.concatenate(x_split1)
+                t_train = np.concatenate(t_split1)
+            elif len(x_split1) == 0 and len(x_split2) !=0:
+                X_train = np.concatenate(x_split2)
+                t_train = np.concatenate(t_split2)
+            else:
+                X_train = []
+                t_train = []
+
+            X_trains.append(1*X_train)
+            t_trains.append(1*t_train)
+            X_valids.append(1*X_valid)
+            t_valids.append(1*t_valid)
+        
+        # Candidats hyper-paramètre lamb :
+        candidats_lamb = np.arange(start=0.000000001,stop=2,step=0.01,dtype=float)
+        arg_min_lamb = candidats_lamb[0]
+        erreur_min = 100      
+
+        #Pour chaque valeur de l'hyper-paramètre        
+        for l in range(len(candidats_lamb)):
+            self.lamb = candidats_lamb[l]
+
+            erreurs_differents_groupes = np.empty(k) #tableau contenant les erreurs moyennes pour chaque groupe de données
+
+            # Pour chaque groupe de données :
+            for j in range(k):
+                x_apprentissage, x_validation = X_trains[j], X_valids[j]
+                t_apprentissage, t_validation = t_trains[j], t_valids[j]
+
+                # Entraînement sur x_apprentissage et t_apprentissage :
+                self.entrainement(x_apprentissage, t_apprentissage, False, reference) #False car sinon il va faire un appel récursif infini
+
+                # Prédiction sur valid :
+                erreur_valid = np.empty(len(x_validation))
+                for v in range(len(x_validation)): #pour chaque donnée de D_valid
+                    pred = self.prediction(x_validation[v],reference)
+                    erreur_pred = self.erreur(t_validation[v],pred) #0 si bien prédit, 1 sinon
+                    erreur_valid[v] = erreur_pred
+
+                erreurs_differents_groupes[j] = np.mean(erreur_valid)
+
+            # Erreur pour l'hyper-paramètre (erreur de validation moyenne avec cet hyper-paramètre)
+            erreur_hyper_parametre = np.mean(erreurs_differents_groupes)
+            if erreur_hyper_parametre<erreur_min:
+                arg_min_lamb = self.lamb
+                erreur_min =erreur_hyper_parametre
+
+        # On retient le self.lamb pour lequel l'erreur de validation moyenne est la plus faible    
+        self.lamb = arg_min_lamb
