@@ -4,6 +4,7 @@ Dans cette classe, on implémente la méthode du perceptron, K classes et d dime
 
 from sklearn.linear_model import SGDClassifier
 import numpy as np
+import matplotlib.pyplot as plt
 
 class perceptron:
 
@@ -15,7 +16,7 @@ class perceptron:
         self.W_0 = None #biais
         self.lamb = lamb #terme de régularisation (hyper-paramètre)
 
-    def entrainement(self, x_train, t_train, recherche_hyper_parametres, reference):
+    def entrainement(self, x_train, t_train, recherche_hyper_parametres, reference, loss, penalty, learning_rate, eta):
         """
         Paramètres à inclure dans la fonction SGDCClassifier.
         Dans le cas d'un MAP, E(W) = fonction_perte + lamb*R(W).
@@ -27,8 +28,9 @@ class perceptron:
         cross_validation = True si on veut une recherche d'hyper-paramètres, False sinon.      
         """
         if recherche_hyper_parametres:
-            self.recherche_hyper_parametres(x_train, t_train, reference)
-        modele = SGDClassifier(loss="perceptron",penalty="l2",alpha=self.lamb,learning_rate="constant",eta0=0.001,max_iter=1000)
+            self.recherche_hyper_parametres(x_train, t_train, reference, loss, penalty, learning_rate, eta)
+        modele = SGDClassifier(loss=loss,penalty=penalty,alpha=self.lamb,learning_rate=learning_rate,eta0=eta,max_iter=1000) #SGDClassifier : Stochastic Gradient Descent Classifier
+        #modele = SGDClassifier(loss="perceptron",penalty="l2",alpha=self.lamb,learning_rate="constant",eta0=0.001,max_iter=1000)
         modele.fit(x_train,t_train)
         self.W = modele.coef_ 
         self.W_0 = modele.intercept_
@@ -51,7 +53,7 @@ class perceptron:
         else:
             return 1
 
-    def recherche_hyper_parametres(self,x_tab,t_tab,reference):
+    def recherche_hyper_parametres(self,x_tab,t_tab,reference, loss, penalty, learning_rate, eta):
         """
         Recherche le meilleur hyperparamètre lamb à l'aide de la K-fold cross validation.
         RAPPEL : k-fold cross validation :
@@ -129,7 +131,7 @@ class perceptron:
                 t_apprentissage, t_validation = t_trains[j], t_valids[j]
 
                 # Entraînement sur x_apprentissage et t_apprentissage :
-                self.entrainement(x_apprentissage, t_apprentissage, False, reference) #False car sinon il va faire un appel récursif infini
+                self.entrainement(x_apprentissage, t_apprentissage, False, reference, loss, penalty, learning_rate, eta) #False car sinon il va faire un appel récursif infini
 
                 # Prédiction sur valid :
                 erreur_valid = np.empty(len(x_validation))

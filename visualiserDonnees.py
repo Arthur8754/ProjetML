@@ -23,7 +23,7 @@ class visualiserDonnees:
             dico_map[self.reference[i]] = colors[i] 
         return dico_map
 
-    def visualiserEntrainement(self):
+    def visualiserEntrainement(self, normalized):
         """
         On utilise une ACP pour visualiser les points en 2D.
         """
@@ -42,7 +42,10 @@ class visualiserDonnees:
         plt.scatter(x_train_2d[:,0],x_train_2d[:,1],c=tab_colors)
         plt.xlabel("1ère composante principale")
         plt.ylabel("2ème composante principale")
-        plt.title("Données d'entraînement (vues en 2D à l'aide d'une ACP)")
+        if normalized:
+            plt.title("Données d'entraînement normalisées (vues en 2D à l'aide d'une ACP)")
+        else:
+            plt.title("Données d'entraînement non normalisées (vues en 2D à l'aide d'une ACP)")
         plt.show()
 
     def visualiserTest(self):

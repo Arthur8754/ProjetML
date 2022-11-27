@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class lireDonnees:
     def __init__(self,train_filename, test_filename, reference_filename):
@@ -17,6 +18,20 @@ class lireDonnees:
         x_test = df_test.iloc[:,1:].to_numpy()
         return x_test
 
+    def normalize_data(self, x_train, x_test):
+        transpose_train = np.transpose(x_train)
+        transpose_test = np.transpose(x_test)
+        for i in range(transpose_train.shape[0]): #pour chaque colonne de x_train, ie chaque ligne de transpose, on va calculer la moyenne de la composante
+            mean_train = np.mean(transpose_train[i])
+            std_train = np.std(transpose_train[i])
+            transpose_train[i] = (transpose_train[i]-mean_train)/std_train
+
+            mean_test = np.mean(transpose_test[i])
+            std_test = np.std(transpose_test[i])
+            transpose_test[i] = (transpose_test[i]-mean_test)/std_test
+
+        return np.transpose(transpose_train),np.transpose(transpose_test)
+        
     def create_reference(self):
         """
         Crée la liste des références : tableau des espèces possibles, avec leurs indices
