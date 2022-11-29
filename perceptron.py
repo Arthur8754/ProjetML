@@ -30,7 +30,6 @@ class perceptron:
         if recherche_hyper_parametres:
             self.recherche_hyper_parametres(x_train, t_train, reference, loss, penalty, learning_rate, eta)
         modele = SGDClassifier(loss=loss,penalty=penalty,alpha=self.lamb,learning_rate=learning_rate,eta0=eta,max_iter=1000) #SGDClassifier : Stochastic Gradient Descent Classifier
-        #modele = SGDClassifier(loss="perceptron",penalty="l2",alpha=self.lamb,learning_rate="constant",eta0=0.001,max_iter=1000)
         modele.fit(x_train,t_train)
         self.W = modele.coef_ 
         self.W_0 = modele.intercept_
