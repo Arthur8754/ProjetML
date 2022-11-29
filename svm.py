@@ -1,14 +1,17 @@
 """
-Dans cette classe, on implémente la méthode du perceptron, K classes et d dimensions.
+Dans cette classe, on implémente le SVM, K classes et d dimensions.
+REMARQUE : dans le chapitre sur les SVM, on a vu qu'il y avait un hyper-paramètre C. Mais celui est "caché" dans lambda, en effet, on a vu que la forme
+de l'erreur à minimiser dans le cas du SVM est la même que pour le perceptron, avec lambda = 1/(2C) et avec la loss "hinge".
+
+Le code est donc exactement le même que pour le perceptron, à la seule différence près qu'on utilise la loss "hinge" et pas la loss "perceptron".
 
 Rq : pour l'instant on ne gère que le cas linéaire --> rajouter le phi pour gérer le cas non linéaire (à voir)
-
 """
 
 from sklearn.linear_model import SGDClassifier
 import numpy as np
 
-class perceptron:
+class svm:
 
     def __init__(self,lamb):
         """
@@ -16,7 +19,7 @@ class perceptron:
         """
         self.W = None #matrice des paramètres (biais NON inclus)
         self.W_0 = None #biais
-        self.lamb = lamb #terme de régularisation (hyper-paramètre)
+        self.lamb = lamb #terme de régularisation (hyper-paramètre) (C caché)
 
     def entrainement(self, x_train, t_train, recherche_hyper_parametres, reference, penalty, learning_rate, eta):
         """
@@ -31,7 +34,7 @@ class perceptron:
         """
         if recherche_hyper_parametres:
             self.recherche_hyper_parametres(x_train, t_train, reference, penalty, learning_rate, eta)
-        modele = SGDClassifier(loss="perceptron",penalty=penalty,alpha=self.lamb,learning_rate=learning_rate,eta0=eta,max_iter=1000) #SGDClassifier : Stochastic Gradient Descent Classifier
+        modele = SGDClassifier(loss="hinge",penalty=penalty,alpha=self.lamb,learning_rate=learning_rate,eta0=eta,max_iter=1000) #SGDClassifier : Stochastic Gradient Descent Classifier
         modele.fit(x_train,t_train)
         self.W = modele.coef_ 
         self.W_0 = modele.intercept_

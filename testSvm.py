@@ -3,9 +3,9 @@ Dans cette classe, on applique le modèle du perceptron sur les données d'entra
 et on effectue des traitements sur les données.
 """
 
-import perceptron
+import svm
 
-class testPerceptron:
+class testSvm:
 
     def __init__(self):
         """
@@ -17,6 +17,6 @@ class testPerceptron:
         """
         Crée un instance de la classe perceptron, et détermine l'erreur d'entraînement et de validation.
         """
-        modele = perceptron.perceptron(lamb)
+        modele = svm.svm(lamb)
         erreur_train, erreur_valid = modele.erreur_train_and_valid(x_train, t_train, reference, k, recherche_hyper_parametres, penalty, learning_rate, eta)
         return erreur_train, erreur_valid
