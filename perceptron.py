@@ -16,19 +16,19 @@ class perceptron:
         Crée le modèle du perceptron.
         """
         self.lamb = lamb #terme de régularisation (hyper-paramètre)
-        self.sgdc = SGDClassifier(alpha = lamb, max_iter=1000)
+        self.clf = SGDClassifier(alpha = lamb, max_iter=1000)
 
     def entrainement(self, x_train, t_train):
         """
         Entraîne le classifieur à l'aide de x_train et t_train.
         """
-        self.sgdc.fit(x_train, t_train)
+        self.clf.fit(x_train, t_train)
     
     def prediction(self,x_tab):
         """
         Prédit les classes associées à chaque entrée de x_tab.
         """
-        classes = self.sgdc.predict(x_tab)
+        classes = self.clf.predict(x_tab)
         return classes
 
 def main():
