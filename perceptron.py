@@ -6,30 +6,146 @@ Rq : pour l'instant on ne gère que le cas linéaire --> rajouter le phi pour g�
 """
 
 from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import KFold
 import lireDonnees
 import numpy as np
+import matplotlib.pyplot as plt
 
 class perceptron:
 
     def __init__(self, lamb):
-        """
-        Crée le modèle du perceptron.
-        """
         self.lamb = lamb #terme de régularisation (hyper-paramètre)
-        self.clf = SGDClassifier(alpha = lamb, max_iter=1000)
+        self.clf = SGDClassifier(loss="perceptron",alpha=self.lamb, eta0=0.01)
 
-    def entrainement(self, x_train, t_train):
+    def entrainement(self, x_train, t_train, recherche_hyp_param):
         """
         Entraîne le classifieur à l'aide de x_train et t_train.
         """
+        if recherche_hyp_param:
+            self.recherche_hyper_parametres(x_train, t_train, k=10)
         self.clf.fit(x_train, t_train)
     
     def prediction(self,x_tab):
         """
-        Prédit les classes associées à chaque entrée de x_tab.
+        Détermine les classes pour chaque entrée x de x_tab.
         """
         classes = self.clf.predict(x_tab)
         return classes
+
+    def erreur(self, x_tab, t_tab):
+        """
+        Détermine le taux d'erreur sur la prédiction faite sur x_tab par rapport à t_tab
+        """
+        err = 1-self.clf.score(x_tab, t_tab)
+        return err
+
+    def recherche_hyper_parametres(self, x_tab, t_tab, k):
+        """
+        Recherche la valeur optimale pour l'hyper-paramètre self.lamb, à l'aide d'une k-fold cross validation.
+        RAPPEL : k-fold cross validation :
+            1. Mélanger les données d'entraînement
+            2. Découper les données d'entraînement en k groupes distincts
+            3. Pour chaque valeur possible de l'hyper-paramètre :
+                a. Faire k fois :
+                    i. Prendre 1 groupe sur les k pour la validation (à chaque fois différent d'une itération à l'autre), le reste pour l'apprentissage
+                    ii. Entraîner le modèle sur D_apprentissage
+                    iii. Prédire sur D_valid, et déterminer l'erreur de validation associée
+                b. Déterminer l'erreur moyenne de validation sur toutes les itérations.
+        4. Retenir la valeur de l'hyper-paramètre pour laquelle l'erreur moyenne de validation est minimale
+        """
+        # 1. EXTRACTION DES ENSEMBLES D'APPRENTISSAGE ET DE VALIDATION
+
+        kf = KFold(n_splits=k, shuffle=True) #va shuffle les données et les séparer en k groupes distincts
+
+        # 2. DÉTERMINATION DES ERREURS D'ENTRAÎNEMENT ET DE VALIDATION :
+
+        candidats_lamb = np.arange(start=0.0001,stop=0.1,step=0.0001,dtype=float)  
+        lamb_optimal = candidats_lamb[0]
+        erreur_min = 1
+        erreurs_lamb_array_train = [] # pour plot : tableau contenant les erreurs d'entraînement moyenne, pour chaque valeur de l'hyper-param
+        erreurs_lamb_array_valid = [] # pour plot : tableau contenant les erreurs de validation moyenne, pour chaque valeur de l'hyper-param
+        
+        # Pour chaque valeur de l'hyper-paramètre :
+        for lamb in candidats_lamb: 
+            self.lamb = lamb
+            self.clf.alpha = self.lamb
+            print(self.clf.alpha)
+
+            erreurs_app = [] #tableau stockant l'erreur d'entraînement pour chaque k
+            erreurs_valid = [] #tableau stockant l'erreur de validation pour chaque k    
+
+            # Pour chaque groupe de données :
+            for app_index, valid_index in kf.split(x_tab):
+                x_app, x_valid = x_tab[app_index], x_tab[valid_index]
+                t_app, t_valid = t_tab[app_index], t_tab[valid_index]
+
+                # Entraînement sur x_app et t_app :
+                self.entrainement(x_app, t_app, recherche_hyp_param=False)
+                # Erreur d'entraînement :
+                erreurs_app.append(self.erreur(x_app, t_app)) #erreur moyenne sur x_app.
+
+                # Erreur de validation :
+                erreurs_valid.append(self.erreur(x_valid, t_valid)) #erreur moyenne sur x_valid.
+
+            E_train = np.mean(erreurs_app)
+            E_valid = np.mean(erreurs_valid)
+            erreurs_lamb_array_train.append(E_train)    
+            erreurs_lamb_array_valid.append(E_valid)
+            if E_valid < erreur_min:
+                lamb_optimal = self.lamb
+                erreur_min = E_valid
+        self.lamb = lamb_optimal
+        self.clf.alpha = self.lamb
+
+        # Plottage des erreurs d'entraînement et de validation :
+        plt.figure(0) 
+        plt.plot(candidats_lamb, erreurs_lamb_array_train, color='blue',label="E_train")
+        plt.plot(candidats_lamb, erreurs_lamb_array_valid, color='red', label="E_valid")
+        plt.xlabel("lambda")
+        plt.ylabel("Taux d'erreur (%)")
+        plt.title("Évolution E_train et E_valid en fonction de lambda")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig("figures/perceptronCrossValidation.png")
+
+
+    def erreur_train_valid(self, x_tab, t_tab, k):
+        """
+        Détermine l'erreur d'entraînement moyenne et l'erreur de validation moyenne, grâce à une cross validation.
+        Concrètement, on découpe x_train en k groupes distincts. Puis, on fait k fois :
+        --> sélection d'un groupe pour la validation (à chaque fois différent d'une itération à l'autre) ;
+        --> sélection du reste pour l'apprentissage.
+        --> entraînement puis prédiction du modèle sur l'ensemble d'apprentissage --> erreur_app ;
+        --> prédiction du modèle sur l'ensemble de validation --> erreur_valid
+        Puis on prend la moyenne sur erreur_app (entraînement), puis la moyenne sur erreur_valid (validation)
+        Ainsi, on peut savoir comment réagit notre modèle face à des données qu'il n'a jamais vues (avec la validation).
+        """
+        # 1. EXTRACTION DES ENSEMBLES D'APPRENTISSAGE ET DE VALIDATION
+
+        kf = KFold(n_splits=k, shuffle=True) #va shuffle les données et les séparer en k groupes distincts
+
+        # 2. DÉTERMINATION DES ERREURS D'ENTRAÎNEMENT ET DE VALIDATION :
+
+        erreurs_app = [] #tableau stockant l'erreur d'entraînement pour chaque k
+        erreurs_valid = [] #tableau stockant l'erreur de validation pour chaque k    
+
+        # Pour chaque groupe de données :
+        for app_index, valid_index in kf.split(x_tab):
+            x_app, x_valid = x_tab[app_index], x_tab[valid_index]
+            t_app, t_valid = t_tab[app_index], t_tab[valid_index]
+
+            # Entraînement sur x_app et t_app :
+            self.entrainement(x_app, t_app, recherche_hyp_param=False)
+
+            # Erreur d'entraînement :
+            erreurs_app.append(self.erreur(x_app, t_app)) #erreur moyenne sur x_app.
+
+            # Erreur de validation :
+            erreurs_valid.append(self.erreur(x_valid, t_valid)) #erreur moyenne sur x_valid.
+
+        E_train = np.mean(erreurs_app)
+        E_valid = np.mean(erreurs_valid)
+        return E_train, E_valid
 
 def main():
     # Lecture des données :
@@ -37,197 +153,12 @@ def main():
     x_train,t_train = rd.extract_train_data()
     
     # Modèle :
-    modele = perceptron(lamb=0.01)
-    modele.entrainement(x_train, t_train)
-    classes = modele.prediction(x_train)
-    print("Classes prédites :")
-    print(classes)
+    perc = perceptron(lamb=0.01)
+    #perc.entrainement(x_train, t_train, recherche_hyp_param=True) #pour recherche hyper-paramètres
+    #print(perc.lamb)
+    E_train, E_valid = perc.erreur_train_valid(x_train, t_train, 10)
+    print(f"Erreur moyenne d'entraînement : {np.round(100*E_train,1)} %")
+    print(f"Erreur moyenne de validation : {np.round(100*E_valid,1)} %")
 
 if __name__=="__main__":
     main()
-
-    # def erreur(self,t,pred):
-    #     """
-    #     Retourne 1 si t!=pred, 0 sinon.
-    #     pred est l'espèce prédite pour une entrée x donnée, t est la cible attendue pour ce x.
-    #     """
-    #     if t==pred:
-    #         return 0
-    #     else:
-    #         return 1
-
-    # def recherche_hyper_parametres(self,x_tab,t_tab,reference, penalty, learning_rate, eta):
-    #     """
-    #     Recherche le meilleur hyperparamètre lamb à l'aide de la K-fold cross validation.
-    #     RAPPEL : k-fold cross validation :
-    #     1. Mélanger les données d'entraînement
-    #     2. Découper les données d'entraînement en k groupes distincts
-    #     3. Pour chaque valeur possible de l'hyper-paramètre :
-    #         a. Faire k fois :
-    #             i. Prendre 1 groupe sur les k pour la validation (à chaque fois différent d'une itération à l'autre), le reste pour l'apprentissage
-    #             ii. Entraîner le modèle sur D_apprentissage
-    #             iii. Prédire sur D_valid, et déterminer l'erreur de validation associée
-    #         b. Déterminer l'erreur moyenne de validation sur toutes les itérations.
-    #     4. Retenir la valeur de l'hyper-paramètre pour laquelle l'erreur moyenne de validation est minimale
-    #     """
-    #     # Mélange des données d'entraînement :
-    #     shuffler = np.random.permutation(len(x_tab)) #permute les index aléatoirement
-    #     x_tab_shuffled = x_tab[shuffler] #on associe x_tab aux nouveaux index
-    #     t_tab_shuffled = t_tab[shuffler] #on associe t_tab aux nouveaux index
-
-    #     # Découpage des données d'entraînement en k=10 groupes distincts
-    #     k=10
-    #     x_split = np.split(x_tab_shuffled,k)
-    #     t_split = np.split(t_tab_shuffled,k)
-
-    #     # Extraction des données d'entraînement et de validation :
-    #     X_trains = [] #tableau à k=10 éléments : stocke les X_train pour les 10 itérations de la k fold cross validation
-    #     t_trains = []
-    #     X_valids = []
-    #     t_valids = []
-
-    #     for j in range(k):
-    #         # Recherche de l'ensemble de validation (un groupe sur les k groupes (à chaque fois différent))
-    #         X_valid = x_split[j]
-    #         t_valid = t_split[j]
-            
-    #         # Recherche de l'ensemble d'apprentissage (tout sauf le groupe de validation)
-    #         x_split1 = x_split[:j]
-    #         x_split2 = x_split[j+1:]
-    #         t_split1 = t_split[:j]
-    #         t_split2 = t_split[j+1:]
-
-    #         if len(x_split1) != 0 and len(x_split2)!=0:
-    #             X_train = np.array(np.concatenate((x_split1,x_split2)))
-    #             X_train = X_train.reshape((-1,len(x_tab[0])))
-    #             t_train = np.array(np.concatenate((t_split1,t_split2)))
-    #             t_train = t_train.reshape((1,-1))[0]
-    #         elif len(x_split1) != 0 and len(x_split2) == 0:
-    #             X_train = np.concatenate(x_split1)
-    #             t_train = np.concatenate(t_split1)
-    #         elif len(x_split1) == 0 and len(x_split2) !=0:
-    #             X_train = np.concatenate(x_split2)
-    #             t_train = np.concatenate(t_split2)
-    #         else:
-    #             X_train = []
-    #             t_train = []
-
-    #         X_trains.append(1*X_train)
-    #         t_trains.append(1*t_train)
-    #         X_valids.append(1*X_valid)
-    #         t_valids.append(1*t_valid)
-        
-    #     # Candidats hyper-paramètre lamb :
-    #     candidats_lamb = np.arange(start=0.000000001,stop=2,step=0.01,dtype=float)
-    #     arg_min_lamb = candidats_lamb[0]
-    #     erreur_min = 100      
-
-    #     #Pour chaque valeur de l'hyper-paramètre        
-    #     for l in range(len(candidats_lamb)):
-    #         self.lamb = candidats_lamb[l]
-
-    #         erreurs_differents_groupes = np.empty(k) #tableau contenant les erreurs moyennes pour chaque groupe de données
-
-    #         # Pour chaque groupe de données :
-    #         for j in range(k):
-    #             x_apprentissage, x_validation = X_trains[j], X_valids[j]
-    #             t_apprentissage, t_validation = t_trains[j], t_valids[j]
-
-    #             # Entraînement sur x_apprentissage et t_apprentissage :
-    #             self.entrainement(x_apprentissage, t_apprentissage, False, reference, penalty, learning_rate, eta) #False car sinon il va faire un appel récursif infini
-
-    #             # Prédiction sur valid :
-    #             erreur_valid = np.empty(len(x_validation))
-    #             for v in range(len(x_validation)): #pour chaque donnée de D_valid
-    #                 pred = self.prediction(x_validation[v],reference)
-    #                 erreur_pred = self.erreur(t_validation[v],pred) #0 si bien prédit, 1 sinon
-    #                 erreur_valid[v] = erreur_pred
-
-    #             erreurs_differents_groupes[j] = np.mean(erreur_valid)
-
-    #         # Erreur pour l'hyper-paramètre (erreur de validation moyenne avec cet hyper-paramètre)
-    #         erreur_hyper_parametre = np.mean(erreurs_differents_groupes)
-    #         if erreur_hyper_parametre<erreur_min:
-    #             arg_min_lamb = self.lamb
-    #             erreur_min =erreur_hyper_parametre
-
-    #     # On retient le self.lamb pour lequel l'erreur de validation moyenne est la plus faible    
-    #     self.lamb = arg_min_lamb
-    
-    # def erreur_train_and_valid(self, x_tab, t_tab, reference, k, recherche_hyper_parametres, penalty, learning_rate, eta):
-    #     """
-    #     Détermine l'erreur d'entraînement et de validation. Ce calcul se fait à l'aide d'une cross validation : de façon semblable à la recherche d'hyper-paramètres, 
-    #     on découpe x_tab en k groupes distincts, puis, on entraîne le modèle sur k-1 groupes et on teste sur un des groupes, et on fait ça k fois, en prenant à chaque
-    #     fois un ensemble de validation différent.
-    #     """
-    #     # Mélange des données d'entraînement :
-    #     shuffler = np.random.permutation(len(x_tab)) #permute les index aléatoirement
-    #     x_tab_shuffled = x_tab[shuffler] #on associe x_tab aux nouveaux index
-    #     t_tab_shuffled = t_tab[shuffler] #on associe t_tab aux nouveaux index
-
-    #     # Découpage des données d'entraînement en k groupes distincts
-    #     x_split = np.split(x_tab_shuffled,k)
-    #     t_split = np.split(t_tab_shuffled,k)
-
-    #     # Extraction des données d'entraînement et de validation :
-    #     X_trains = [] #tableau à k=10 éléments : stocke les X_train pour les 10 itérations de la k fold cross validation
-    #     t_trains = []
-    #     X_valids = []
-    #     t_valids = []
-
-    #     for j in range(k):
-    #         # Recherche de l'ensemble de validation (un groupe sur les k groupes (à chaque fois différent))
-    #         X_valid = x_split[j]
-    #         t_valid = t_split[j]
-            
-    #         # Recherche de l'ensemble d'apprentissage (tout sauf le groupe de validation)
-    #         x_split1 = x_split[:j]
-    #         x_split2 = x_split[j+1:]
-    #         t_split1 = t_split[:j]
-    #         t_split2 = t_split[j+1:]
-
-    #         if len(x_split1) != 0 and len(x_split2)!=0:
-    #             X_train = np.array(np.concatenate((x_split1,x_split2)))
-    #             X_train = X_train.reshape((-1,len(x_tab[0])))
-    #             t_train = np.array(np.concatenate((t_split1,t_split2)))
-    #             t_train = t_train.reshape((1,-1))[0]
-    #         elif len(x_split1) != 0 and len(x_split2) == 0:
-    #             X_train = np.concatenate(x_split1)
-    #             t_train = np.concatenate(t_split1)
-    #         elif len(x_split1) == 0 and len(x_split2) !=0:
-    #             X_train = np.concatenate(x_split2)
-    #             t_train = np.concatenate(t_split2)
-    #         else:
-    #             X_train = []
-    #             t_train = []
-
-    #         X_trains.append(1*X_train)
-    #         t_trains.append(1*t_train)
-    #         X_valids.append(1*X_valid)
-    #         t_valids.append(1*t_valid)
-        
-    #     erreurs_train = np.empty(k) #tableau stockant l'erreur d'entraînement pour chaque k
-    #     erreurs_valid = np.empty(k) #tableau stockant l'erreur de validation pour chaque k    
-
-    #     # Pour chaque groupe de données :
-    #     for j in range(k):
-    #         x_apprentissage, x_validation = X_trains[j], X_valids[j]
-    #         t_apprentissage, t_validation = t_trains[j], t_valids[j]
-
-    #         # Entraînement sur x_apprentissage et t_apprentissage :
-    #         self.entrainement(x_apprentissage, t_apprentissage, recherche_hyper_parametres, reference, penalty, learning_rate, eta)
-
-    #         # Prédiction et erreur pour l'entraînement :
-    #         pred_app = np.array([self.prediction(x,reference) for x in x_apprentissage]) #tableau des prédictions faites
-    #         erreur_app_array = np.array([self.erreur(t,pred) for t,pred in zip(t_apprentissage,pred_app)]) #tableau des erreurs
-    #         erreurs_train[j] = round(100*np.count_nonzero(erreur_app_array)/len(erreur_app_array),1)
-
-    #         # Prédiction et erreur pour la validation :
-    #         pred_valid = np.array([self.prediction(x,reference) for x in x_validation]) #tableau des prédictions faites
-    #         erreur_valid_array = np.array([self.erreur(t,pred) for t,pred in zip(t_validation,pred_valid)]) #tableau des erreurs
-    #         erreurs_valid[j] = round(100*np.count_nonzero(erreur_valid_array)/len(erreur_valid_array),1)
-        
-    #     erreur_train = round(np.mean(erreurs_train),1)
-    #     erreur_valid = round(np.mean(erreurs_valid),1)
-
-    #     return erreur_train, erreur_valid
