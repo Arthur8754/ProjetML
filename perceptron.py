@@ -102,7 +102,7 @@ class perceptron:
         plt.plot(candidats_lamb, erreurs_lamb_array_train, color='blue',label="E_train")
         plt.plot(candidats_lamb, erreurs_lamb_array_valid, color='red', label="E_valid")
         plt.xlabel("lambda")
-        plt.ylabel("Taux d'erreur (%)")
+        plt.ylabel("Taux d'erreur")
         plt.title("Évolution E_train et E_valid en fonction de lambda")
         plt.legend()
         plt.grid(True)
@@ -145,6 +145,13 @@ class perceptron:
 
         E_train = np.mean(erreurs_app)
         E_valid = np.mean(erreurs_valid)
+
+        plt.figure(0) 
+        plt.bar(["E_train","E_valid"],[E_train, E_valid])
+        plt.ylabel("Taux d'erreur")
+        plt.ylim(0,1)
+        plt.title(f"Erreur d'entraînement et de validation, lambda = {self.lamb}")
+        plt.savefig("figures/perceptronErreur.png")
         return E_train, E_valid
 
 def main():
