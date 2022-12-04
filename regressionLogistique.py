@@ -1,11 +1,6 @@
 """
-Dans cette classe, on implémente le SVM, K classes et d dimensions.
-REMARQUE : dans le chapitre sur les SVM, on a vu qu'il y avait un hyper-paramètre C. Mais celui est "caché" dans lambda, en effet, on a vu que la forme
-de l'erreur à minimiser dans le cas du SVM est la même que pour le perceptron, avec lambda = 1/(2C) et avec la loss "hinge".
-
-Le code est donc exactement le même que pour le perceptron, à la seule différence près qu'on utilise la loss "hinge" et pas la loss "perceptron".
-
-Rq : pour l'instant on ne gère que le cas linéaire --> rajouter le phi pour gérer le cas non linéaire (à voir)
+Dans cette classe, on implémente la régression logistique.
+La fonction de coût est la seule chose qui change par rapport au perceptron et aux SVM --> entropie croisée.
 """
 
 from sklearn.linear_model import SGDClassifier
@@ -14,11 +9,11 @@ import lireDonnees
 import numpy as np
 import matplotlib.pyplot as plt
 
-class svm:
+class regressionLogistique:
 
     def __init__(self, lamb):
-        self.lamb = lamb #hyper-paramètre C caché
-        self.clf = SGDClassifier(loss="hinge",alpha=self.lamb, eta0=0.01)
+        self.lamb = lamb
+        self.clf = SGDClassifier(loss="log_loss",alpha=self.lamb, eta0=0.01)
 
     def entrainement(self, x_train, t_train, recherche_hyp_param):
         """
@@ -109,7 +104,7 @@ class svm:
         plt.title("Évolution E_train et E_valid en fonction de lambda")
         plt.legend()
         plt.grid(True)
-        plt.savefig("figures/svmCrossValidation.png")
+        plt.savefig("figures/regLogCrossValidation.png")
 
 
     def erreur_train_valid(self, x_tab, t_tab, k):
@@ -154,7 +149,7 @@ class svm:
         plt.ylabel("Taux d'erreur")
         plt.ylim(0,1)
         plt.title(f"Erreur d'entraînement et de validation, lambda = {self.lamb}")
-        plt.savefig("figures/svmErreur.png")
+        plt.savefig("figures/regLogErreur.png")
         return E_train, E_valid
 
 def main():
@@ -163,10 +158,10 @@ def main():
     x_train,t_train = rd.extract_train_data()
     
     # Modèle :
-    SVM = svm(lamb=0.001)
+    RegLog = regressionLogistique(lamb=0.001)
     #perc.entrainement(x_train, t_train, recherche_hyp_param=True) #pour recherche hyper-paramètres
     #print(perc.lamb)
-    E_train, E_valid = SVM.erreur_train_valid(x_train, t_train, 10)
+    E_train, E_valid = RegLog.erreur_train_valid(x_train, t_train, 10)
     print("Taux d'erreur d'entraînement : % .2f" % E_train)
     print("Taux d'erreur de validation : % .2f" % E_valid)
 

@@ -158,14 +158,16 @@ def main():
     # Lecture des données :
     rd = lireDonnees.lireDonnees("data/train.csv","data/test.csv","data/sample_submission.csv")
     x_train,t_train = rd.extract_train_data()
+    x_test = rd.extract_test_data()
+    x_train_normalized, x_test_normalized = rd.normalize_data(x_train, x_test)
     
     # Modèle :
     perc = perceptron(lamb=0.01)
     #perc.entrainement(x_train, t_train, recherche_hyp_param=True) #pour recherche hyper-paramètres
     #print(perc.lamb)
     E_train, E_valid = perc.erreur_train_valid(x_train, t_train, 10)
-    print(f"Erreur moyenne d'entraînement : {np.round(100*E_train,1)} %")
-    print(f"Erreur moyenne de validation : {np.round(100*E_valid,1)} %")
+    print("Taux d'erreur d'entraînement : % .2f" % E_train)
+    print("Taux d'erreur de validation : % .2f" % E_valid)
 
 if __name__=="__main__":
     main()
