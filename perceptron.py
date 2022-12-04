@@ -1,8 +1,5 @@
 """
-Dans cette classe, on implémente la méthode du perceptron, K classes et d dimensions.
-
-Rq : pour l'instant on ne gère que le cas linéaire --> rajouter le phi pour gérer le cas non linéaire (à voir)
-
+Dans cette classe, on implémente la méthode de classification du perceptron, K classes et d dimensions.
 """
 
 from sklearn.linear_model import SGDClassifier
@@ -168,6 +165,7 @@ def main():
     E_train, E_valid = perc.erreur_train_valid(x_train, t_train, 10)
     print("Taux d'erreur d'entraînement : % .2f" % E_train)
     print("Taux d'erreur de validation : % .2f" % E_valid)
+
 
 if __name__=="__main__":
     main()

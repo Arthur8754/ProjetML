@@ -16,6 +16,7 @@ class reseauNeurones:
 
     def entrainement(self, x_train, t_train, recherche_hyp_param):
         self.clf.fit(x_train, t_train)
+
     
     def prediction(self, x_tab):
         classes = self.clf.predict(x_tab)
@@ -33,7 +34,9 @@ class reseauNeurones:
         # 2. DÉTERMINATION DES ERREURS D'ENTRAÎNEMENT ET DE VALIDATION :
 
         erreurs_app = [] #tableau stockant l'erreur d'entraînement pour chaque k
-        erreurs_valid = [] #tableau stockant l'erreur de validation pour chaque k    
+        erreurs_valid = [] #tableau stockant l'erreur de validation pour chaque k   
+        loss_train, loss_valid = [], [] 
+        epochs = []
 
         # Pour chaque groupe de données :
         for app_index, valid_index in kf.split(x_tab):
@@ -42,6 +45,7 @@ class reseauNeurones:
 
             # Entraînement sur x_app et t_app :
             self.entrainement(x_app, t_app, recherche_hyp_param=False)
+            loss_train = self.clf.loss_curve_
 
             # Erreur d'entraînement :
             erreurs_app.append(self.erreur(x_app, t_app)) #erreur moyenne sur x_app.
@@ -58,7 +62,20 @@ class reseauNeurones:
         plt.ylim(0,1)
         plt.title(f"Erreur d'entraînement et de validation, lambda = {self.lamb}")
         plt.savefig("figures/reseauNeuronesErreur.png")
+
+        epochs = [i for i in range(1,len(loss_train)+1)]
+        plt.figure(1)
+        plt.plot(epochs, loss_train, color='red',label="Train loss")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.title("Loss entraînement en fonction de epochs")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig("figures/reseauNeuronesLoss.png")
+
         return E_train, E_valid
+
+
 
 def main():
     # Lecture des données :

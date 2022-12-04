@@ -2,9 +2,10 @@
 
 ## 6 méthodes au programme
 Ces méthodes sont les suivantes :
-- Perceptron : fichier ```perceptron.py``` ;
+- Perceptron : fichier ```perceptron.py``` (linéaire) ;
 - SVM : fichier ```svm.py```;
 - Régression logistique : fichier ```regressionLogistique.py```;
+- Réseau de neurones multicouches : fichier ```reseauNeurones.py```;
 
 ## Config environnement virtuel :
 
