@@ -48,5 +48,5 @@ class BernoulliNBClassifier(ProbabilistModelClassifier):
         super().__init__(BernoulliNB(), parameters)
 
 class LogisticRegressionClassifier(ProbabilistModelClassifier):
-    def __init__(self, parameters={"tol":1e-4,"C":1.0}):
+    def __init__(self, parameters={"C":1.0}):
         super().__init__(LogisticRegression(),parameters)
