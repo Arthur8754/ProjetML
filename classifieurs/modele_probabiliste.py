@@ -56,7 +56,8 @@ class GlobalModelClassifier:
             if len(self.parameters)>2 : 
                 print("No plot if there is more than 3 parameters")
             else :     
-                def plot_grid_search(cv_results, grid_param_1, name_param_1, grid_param_2=None, name_param_2=None):
+                def plot_grid_search(clf, grid_param_1, name_param_1, grid_param_2=None, name_param_2=None):
+                    cv_results = clf.cv_results_
                     # Plot Grid search scores   
                     plt.figure(figsize=(10,10))
 
@@ -69,14 +70,38 @@ class GlobalModelClassifier:
                         # Param1 is the X-axis, Param 2 is represented as a different curve (color line)
                         for idx, val in enumerate(grid_param_2):
                             plt.plot(grid_param_1, scores_mean[idx,:], '-o', label= name_param_2 + ': ' + str(val))
+                
+                        ymax = [max(cv_results["mean_test_score"])]*len(grid_param_1)
+                        
+                        best_para1 = list(clf.best_params_.values())[0]
+                        best_para2 = list(clf.best_params_.values())[1]
+
+                        if(type(best_para1)!=str):
+                            best_para1 = '{:1.3f}'.format(best_para1)
+                        if(type(best_para2)!=str):
+                            best_para2 = '{:1.3f}'.format(best_para2)
+
+                        plt.plot(grid_param_1, ymax, label='Best value is : ' + '{:1.3f}'.format(max(cv_results["mean_test_score"])) + ' for '+para1_name+' = ' + best_para1+  'and ' +para2_name+' = ' + best_para2)
 
                     else : 
                         plt.plot(grid_param_1, scores_mean, '-o')
 
+                        ymax = [max(cv_results["mean_test_score"])]*len(grid_param_1)
+
+                        best_para1 = list(clf.best_params_.values())[0]
+
+                        if(type(best_para1)!=str):
+                            best_para1 = '{:1.3f}'.format(best_para1)
+
+                        plt.plot(grid_param_1, ymax, label='Best value is : ' + '{:1.3f}'.format(max(scores_mean)) + ' for '+para1_name +' = ' +best_para1)
+
+                    print(list(clf.best_params_.values()))
+
+
                     plt.title("Grid Search Scores", fontsize=20, fontweight='bold')
                     plt.xlabel(name_param_1, fontsize=16)
                     plt.ylabel('CV Average Score', fontsize=16)
-                    plt.legend(loc="best", fontsize=15)
+                    plt.legend(loc="best", fontsize=12)
                     plt.grid('on')
 
                 if len(self.parameters)>1: 
@@ -91,7 +116,7 @@ class GlobalModelClassifier:
                     para2_name = None
                     para2 = None
 
-                plot_grid_search(clf.cv_results_, para1 , para1_name, para2, para2_name)
+                plot_grid_search(clf, para1 , para1_name, para2, para2_name)
 
         return clf.best_params_
 
