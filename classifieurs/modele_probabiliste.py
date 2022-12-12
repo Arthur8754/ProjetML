@@ -53,28 +53,45 @@ class GlobalModelClassifier:
         clf.fit(X, y)
 
         if graphic:
+            if len(self.parameters)>2 : 
+                print("No plot if there is more than 3 parameters")
+            else :     
+                def plot_grid_search(cv_results, grid_param_1, name_param_1, grid_param_2=None, name_param_2=None):
+                    # Plot Grid search scores   
+                    plt.figure(figsize=(10,10))
 
-            cvres = clf.cv_results_
-            list_param = []
+                    # Get Test Scores Mean
+                    scores_mean = cv_results['mean_test_score']
+                    
+                    if(grid_param_2!=None):
+                        scores_mean = np.array(scores_mean).reshape(len(grid_param_2),len(grid_param_1))
 
-            for i in range(0, len(cvres['params'])):
-                list_param.append(list(cvres['params'][i].values())[0])
+                        # Param1 is the X-axis, Param 2 is represented as a different curve (color line)
+                        for idx, val in enumerate(grid_param_2):
+                            plt.plot(grid_param_1, scores_mean[idx,:], '-o', label= name_param_2 + ': ' + str(val))
 
-            ymax = np.ones(len(cvres['mean_test_score'])) \
-                * max(cvres['mean_test_score'])
+                    else : 
+                        plt.plot(grid_param_1, scores_mean, '-o')
 
-            C = list(self.parameters.values())[0]
-            plt.figure(figsize=(10, 10))
-            plt.plot(C, cvres['mean_test_score'])
-            plt.plot(C, ymax, label='Best value is : '
-                     + '{:1.3f}'.format(max(cvres['mean_test_score']))
-                     + ' for var = '
-                     + '{:1.5f}'.format(list(clf.best_params_.values())[0]))
-            plt.legend()
-            plt.xscale('log')
-            plt.xlabel('Value of hyperparameter')
-            plt.ylabel('Accuracy')
-            plt.show()
+                    plt.title("Grid Search Scores", fontsize=20, fontweight='bold')
+                    plt.xlabel(name_param_1, fontsize=16)
+                    plt.ylabel('CV Average Score', fontsize=16)
+                    plt.legend(loc="best", fontsize=15)
+                    plt.grid('on')
+
+                if len(self.parameters)>1: 
+                    para1_name = list(self.parameters.keys())[0]
+                    para1 = self.parameters[para1_name]
+                    para2_name = list(self.parameters.keys())[1]
+                    para2 = self.parameters[para2_name]
+
+                else :
+                    para1_name = list(self.parameters.keys())[0]
+                    para1 = self.parameters[para1_name]
+                    para2_name = None
+                    para2 = None
+
+                plot_grid_search(clf.cv_results_, para1 , para1_name, para2, para2_name)
 
         return clf.best_params_
 
