@@ -72,7 +72,7 @@ class GlobalModelClassifier:
                      + '{:1.5f}'.format(list(clf.best_params_.values())[0]))
             plt.legend()
             plt.xscale('log')
-            plt.xlabel('Value of variance')
+            plt.xlabel('Value of hyperparameter')
             plt.ylabel('Accuracy')
             plt.show()
 

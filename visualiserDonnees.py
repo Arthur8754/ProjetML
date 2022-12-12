@@ -30,8 +30,10 @@ class visualiserDonnees:
         # Mapping : on associe une espèce à une couleur
         dico_map = self.creerDicoMap()
         tab_colors = [] #tab_colors[i] correspond à la couleur associée à l'espèce t_train[i]
+
         for i in range(len(self.t_train)):
             tab_colors.append(dico_map[self.t_train[i]])
+
 
         # Application de l'ACP sur x_train
         pca = PCA(2) #on veut afficher en 2D, on retiendra les 2 composantes principales de x_train
@@ -48,7 +50,7 @@ class visualiserDonnees:
             plt.title("Données d'entraînement non normalisées (vues en 2D à l'aide d'une ACP)")
         plt.show()
 
-    def visualiserTest(self):
+    def visualiserTest(self, normalized):
         """
         Là aussi, on fait une ACP. Mais pas de mapping, car on ne connaît pas la cible
         """
@@ -61,5 +63,8 @@ class visualiserDonnees:
         plt.scatter(x_test_2d[:,0],x_test_2d[:,1],c="black")
         plt.xlabel("1ère composante principale")
         plt.ylabel("2ème composante principale")
-        plt.title("Données de test (vues en 2D à l'aide d'une ACP)")
+        if normalized:
+            plt.title("Données de test normalisées (vues en 2D à l'aide d'une ACP)")
+        else:
+            plt.title("Données de test non normalisées (vues en 2D à l'aide d'une ACP)")
         plt.show()
